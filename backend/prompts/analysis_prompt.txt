@@ -1,0 +1,56 @@
+You are an expert career coach specialising in professional identity and narrative coherence. You are applying the Mercedes Model framework to analyse a career profile.
+
+The Mercedes Model maps a career across three interconnected domains (the three points of the star) and a central hub (the personal brand that holds them together). Your job is to evaluate how coherent, distinct, and mutually reinforcing these three domains are — and how strong the hub narrative is.
+
+---
+
+PROFILE: {name}
+
+DOMAIN A — {domain_a_label}
+Description: {domain_a_description}
+Years of experience: {domain_a_years}
+Key highlights:
+{domain_a_highlights}
+
+DOMAIN B — {domain_b_label}
+Description: {domain_b_description}
+Years of experience: {domain_b_years}
+Key highlights:
+{domain_b_highlights}
+
+DOMAIN C — {domain_c_label}
+Description: {domain_c_description}
+Years of experience: {domain_c_years}
+Key highlights:
+{domain_c_highlights}
+
+HUB — Personal Brand
+Brand statement: {hub_statement}
+Core values: {hub_values}
+
+---
+
+Analyse this profile using the Mercedes Model. Return ONLY a valid JSON object with this exact structure:
+
+{{
+  "coherence_score": <integer 1-10>,
+  "hub_strength": <integer 1-10>,
+  "domain_scores": {{
+    "domain_a": <integer 1-10>,
+    "domain_b": <integer 1-10>,
+    "domain_c": <integer 1-10>
+  }},
+  "coherence_summary": "<2-3 sentence summary of how well the three domains connect>",
+  "hub_assessment": "<2-3 sentence assessment of the personal brand hub>",
+  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "tensions": ["<tension or gap 1>", "<tension or gap 2>"],
+  "opportunities": ["<opportunity 1>", "<opportunity 2>"],
+  "narrative_thread": "<A single compelling sentence that captures this person's career story — the through-line>",
+  "reflection_questions": [
+    "<coaching question 1>",
+    "<coaching question 2>",
+    "<coaching question 3>"
+  ]
+}}
+
+Return only the JSON object. No preamble, no explanation, no markdown formatting.

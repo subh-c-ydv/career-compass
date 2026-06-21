@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Profiles (kept local, not committed)
+backend/profiles/*.json
+
+# Env files
+.env
+.env.local
+*.env
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
