@@ -4,13 +4,24 @@ import { Link } from 'react-router-dom'
 export default function Home() {
   const [profiles, setProfiles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(null)
 
-  useEffect(() => {
+  const fetchProfiles = () => {
     fetch('/api/profiles')
       .then(r => r.json())
       .then(data => { setProfiles(data); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { fetchProfiles() }, [])
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Delete profile for "${name}"? This cannot be undone.`)) return
+    setDeleting(id)
+    await fetch(`/api/profiles/${id}`, { method: 'DELETE' })
+    setDeleting(null)
+    fetchProfiles()
+  }
 
   return (
     <div>
@@ -42,6 +53,14 @@ export default function Home() {
             <span className={`tag ${p.type === 'coach' ? 'coach' : ''}`}>{p.type}</span>
             <Link to={`/profile/${p.id}`} className="btn btn-secondary">Edit</Link>
             <Link to={`/analysis/${p.id}`} className="btn btn-primary">Analyse</Link>
+            <button
+              className="btn btn-secondary"
+              onClick={() => handleDelete(p.id, p.name)}
+              disabled={deleting === p.id}
+              style={{ color: deleting === p.id ? 'var(--text-muted)' : 'var(--danger)', borderColor: 'var(--danger)' }}
+            >
+              {deleting === p.id ? '…' : 'Delete'}
+            </button>
           </div>
         </div>
       ))}

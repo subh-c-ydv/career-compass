@@ -30,6 +30,15 @@ def create_profile():
     profile_id = save_profile(data)
     return jsonify({"profile_id": profile_id, "status": "saved"})
 
+@app.route("/api/profiles/<profile_id>", methods=["DELETE"])
+def delete_profile(profile_id):
+    """Delete a profile by ID."""
+    path = os.path.join(PROFILES_DIR, f"{profile_id}.json")
+    if not os.path.exists(path):
+        return jsonify({"error": "Profile not found"}), 404
+    os.remove(path)
+    return jsonify({"status": "deleted", "profile_id": profile_id})
+
 # --- Analysis endpoint ---
 
 @app.route("/api/analyse", methods=["POST"])
