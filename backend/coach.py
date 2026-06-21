@@ -31,7 +31,7 @@ def list_profiles() -> list:
                 })
     return profiles
 
-def load_profile(profile_id: str) -> dict | None:
+def load_profile(profile_id: str):
     path = os.path.join(PROFILES_DIR, f"{profile_id}.json")
     if not os.path.exists(path):
         return None
@@ -50,31 +50,40 @@ def save_profile(data: dict) -> str:
 # --- Core analysis ---
 
 def analyse_profile(profile: dict) -> dict:
-    """Run the Mercedes Model analysis using Claude."""
+    """Run the Career Compass Map analysis using Claude."""
     prompt_template = load_prompt("analysis_prompt")
 
-    # Inject profile data into prompt
-    domain_a = profile.get("domain_a", {})
-    domain_b = profile.get("domain_b", {})
-    domain_c = profile.get("domain_c", {})
+    dimensions = profile.get("dimensions", [])
     hub = profile.get("hub", {})
+
+    # Build the dimensions block for the prompt
+    dimensions_block_lines = []
+    for i, dimension in enumerate(dimensions):
+        label = dimension.get("label", f"Dimension {i+1}")
+        description = dimension.get("description", "")
+        years = dimension.get("years", "")
+        highlights = "\n".join(f"- {h}" for h in dimension.get("highlights", []) if h.strip())
+        dimensions_block_lines.append(
+            f"DOMAIN {i+1} — {label}\n"
+            f"Description: {description}\n"
+            f"Years of experience: {years}\n"
+            f"Key highlights:\n{highlights}"
+        )
+    dimensions_block = "\n\n".join(dimensions_block_lines)
+
+    # Build the dimension_score_keys for the JSON schema in the prompt
+    dimension_score_keys = ",\n    ".join(
+        f'"dimension_{i+1}": <integer 1-10>'
+        for i in range(len(dimensions))
+    )
 
     prompt = prompt_template.format(
         name=profile.get("name", "the individual"),
-        domain_a_label=domain_a.get("label", "Domain A"),
-        domain_a_description=domain_a.get("description", ""),
-        domain_a_years=domain_a.get("years", ""),
-        domain_a_highlights="\n".join(domain_a.get("highlights", [])),
-        domain_b_label=domain_b.get("label", "Domain B"),
-        domain_b_description=domain_b.get("description", ""),
-        domain_b_years=domain_b.get("years", ""),
-        domain_b_highlights="\n".join(domain_b.get("highlights", [])),
-        domain_c_label=domain_c.get("label", "Domain C"),
-        domain_c_description=domain_c.get("description", ""),
-        domain_c_years=domain_c.get("years", ""),
-        domain_c_highlights="\n".join(domain_c.get("highlights", [])),
+        dimension_count=len(dimensions),
+        dimensions_block=dimensions_block,
         hub_statement=hub.get("statement", ""),
         hub_values=", ".join(hub.get("values", [])),
+        dimension_score_keys=dimension_score_keys,
     )
 
     message = client.messages.create(
@@ -87,7 +96,6 @@ def analyse_profile(profile: dict) -> dict:
 
     # Parse structured JSON from Claude's response
     try:
-        # Claude is instructed to return JSON — extract it
         start = raw.find("{")
         end = raw.rfind("}") + 1
         analysis = json.loads(raw[start:end])

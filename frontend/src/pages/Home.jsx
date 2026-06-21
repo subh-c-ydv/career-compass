@@ -17,7 +17,7 @@ export default function Home() {
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
         <div>
           <div className="h1">Career Compass</div>
-          <p className="muted">Mercedes Model coaching profiles</p>
+          <p className="muted">Career Compass Map — coaching profiles</p>
         </div>
         <Link to="/profile/new" className="btn btn-primary">+ New Profile</Link>
       </div>

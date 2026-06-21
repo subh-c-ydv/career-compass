@@ -1,20 +1,20 @@
 # Career Compass 🧭
 
-A coaching companion web app built around the **Mercedes Model** — a three-domain framework for mapping career identity, diagnosing coherence gaps, and generating a clear professional narrative.
+A coaching companion web app built around the **Career Compass Map** — a flexible multi-dimensional framework for mapping career identity, diagnosing coherence gaps, and generating a clear professional narrative.
 
 ## What it does
 
-Career Compass helps a coach (or individual) structure a career across three interconnected domains — like the three points of the Mercedes star — and uses AI analysis to surface:
+Career Compass helps a coach (or individual) structure a career across multiple dimensions — between 3 and 6 — and uses AI analysis to surface:
 
-- How coherent the three domains are with each other
+- How coherent the dimensions are with each other
 - Where the personal brand "hub" is strong or fractured
 - Key tensions, gaps, and opportunities
 - Reflection questions for coaching conversations
-- A narrative summary the client can own
+- A narrative thread the client can own
 
 ## Who it's for
 
-- Primary: the coach (you) running sessions with clients
+- Primary: the coach running sessions with clients
 - Secondary: individuals doing structured self-reflection
 - Profile #1 is always the coach's own career — the reference implementation
 
@@ -40,7 +40,7 @@ career-compass/
 │   └── package.json
 ├── backend/           # Flask API
 │   ├── app.py            # API routes
-│   ├── coach.py          # Mercedes Model logic + Claude calls
+│   ├── coach.py          # Career Compass Map logic + Claude calls
 │   ├── config.py         # Config and env vars
 │   └── prompts/          # Prompt templates
 │       └── analysis_prompt.txt
@@ -60,7 +60,7 @@ python -m venv venv
 source venv/bin/activate
 pip install -r ../requirements.txt
 export ANTHROPIC_API_KEY=your_key_here
-python app.py
+python3 app.py
 ```
 
 ### Frontend
@@ -71,17 +71,20 @@ npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:5173` with the API at `http://localhost:5000`.
+The app runs at `http://localhost:5173` with the API at `http://localhost:5001`.
 
-## The Mercedes Model
+## The Career Compass Map
 
-The framework maps a career across three points:
+The framework maps a career across 3 to 6 independently defined dimensions — each representing a distinct aspect of professional identity. A central **hub** holds them together as the personal brand.
 
-1. **Domain A** — Current core (where you operate today)
-2. **Domain B** — Aspirational direction (where you're heading)
-3. **Domain C** — Methodological identity (how you work / your craft)
+| Element | Description |
+|---|---|
+| Dimensions | 3–6 career dimensions, each independently scored |
+| Hub | The personal brand — the narrative thread across all dimensions |
+| Coherence Score | How well the dimensions connect and reinforce each other |
+| Radar Chart | Visual shape of the career — balanced = coherent, lopsided = opportunity |
 
-The **hub** — the centre of the star — is your personal brand: the narrative that holds all three together. Career Compass evaluates coherence between the three points and the strength of the hub.
+The radar chart is the key diagnostic tool: a balanced polygon means strong coherence across all dimensions. A lopsided shape immediately flags where coaching energy is needed.
 
 ---
 

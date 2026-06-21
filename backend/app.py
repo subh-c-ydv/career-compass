@@ -34,7 +34,7 @@ def create_profile():
 
 @app.route("/api/analyse", methods=["POST"])
 def analyse():
-    """Run Mercedes Model analysis on a profile."""
+    """Run Career Compass Map analysis on a profile."""
     data = request.json
     profile = data.get("profile")
     if not profile:
@@ -45,4 +45,4 @@ def analyse():
 
 if __name__ == "__main__":
     os.makedirs(PROFILES_DIR, exist_ok=True)
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

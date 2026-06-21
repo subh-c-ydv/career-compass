@@ -2,18 +2,63 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 const EMPTY_DOMAIN = { label: '', description: '', years: '', highlights: ['', '', ''] }
+
 const EMPTY_PROFILE = {
   name: '',
   type: 'client',
-  domain_a: { ...EMPTY_DOMAIN },
-  domain_b: { ...EMPTY_DOMAIN },
-  domain_c: { ...EMPTY_DOMAIN },
+  dimensions: [
+    { ...EMPTY_DOMAIN },
+    { ...EMPTY_DOMAIN },
+    { ...EMPTY_DOMAIN }
+  ],
   hub: { statement: '', values: ['', '', ''] }
 }
 
-function DomainSection({ label, value, onChange, letter }) {
-  const colours = { A: '#6c8eff', B: '#f0a04b', C: '#4caf7d' }
-  const colour = colours[letter]
+const EXAMPLE_PROFILE = {
+  name: 'Subhash Yadav',
+  type: 'coach',
+  dimensions: [
+    {
+      label: 'Software Delivery Leadership',
+      description: 'Leading large-scale technology delivery across global organisations — spanning portfolio management, programme delivery, and Agile transformation. The operational core of a 20+ year career.',
+      years: '20',
+      highlights: [
+        'Portfolio Manager at Bunker Holding Group, overseeing cross-functional delivery across multiple Scrum teams',
+        'Senior roles at Maersk / APM Terminals driving payment digitalisation — reducing cash transactions by 25-30%',
+        'End-to-end programme delivery at Infosys across enterprise technology engagements'
+      ]
+    },
+    {
+      label: 'Strategy & Consulting',
+      description: 'An aspirational direction toward advisory and consulting work — bringing strategic thinking, organisational design, and technology leadership into a self-directed practice, likely anchored in India post-Denmark.',
+      years: '5',
+      highlights: [
+        'Evaluating executive education pathways (ISB, Henley) to build consulting credibility',
+        'Building thought leadership platform at allthingsagile.net as a consulting identity',
+        'Cross-border financial and career planning toward entrepreneurial independence by mid-2030s'
+      ]
+    },
+    {
+      label: 'Agile Coaching',
+      description: 'A methodological identity rooted in Agile ways of working — not just as a framework but as a philosophy of continuous improvement, team empowerment, and coaching-led leadership.',
+      years: '12',
+      highlights: [
+        'Designing and facilitating retrospectives across multiple Scrum teams with custom formats',
+        'Exploring ICF-accredited coaching certification via Henley Business School PCEC programme',
+        'Publishing Agile insights and frameworks at allthingsagile.net'
+      ]
+    }
+  ],
+  hub: {
+    statement: 'A technology delivery leader who bridges execution and strategy — using Agile coaching as the connective tissue between getting things done today and building the systems that work tomorrow.',
+    values: ['Delivery Excellence', 'Continuous Improvement', 'Purposeful Leadership']
+  }
+}
+
+const DOMAIN_COLOURS = ['#6c8eff', '#f0a04b', '#4caf7d', '#e05c5c', '#a78bfa', '#38bdf8']
+
+function DimensionSection({ index, value, onChange, onRemove, canRemove }) {
+  const colour = DOMAIN_COLOURS[index % DOMAIN_COLOURS.length]
 
   const update = (field, val) => onChange({ ...value, [field]: val })
   const updateHighlight = (i, val) => {
@@ -23,16 +68,31 @@ function DomainSection({ label, value, onChange, letter }) {
   }
 
   return (
-    <div className="card" style={{ borderTop: `3px solid ${colour}` }}>
-      <div className="section-label" style={{ color: colour }}>Point {letter}</div>
+    <div className="card" style={{ borderTop: `3px solid ${colour}`, position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div className="section-label" style={{ color: colour, marginBottom: 0 }}>
+          Dimension {index + 1}
+        </div>
+        {canRemove && (
+          <button onClick={onRemove} style={{
+            background: 'none', border: 'none', color: 'var(--text-muted)',
+            cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '0.2rem 0.4rem',
+            borderRadius: 'var(--radius-sm)', transition: 'color 0.15s'
+          }}
+            onMouseEnter={e => e.target.style.color = 'var(--danger)'}
+            onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
+            title="Remove dimension">✕</button>
+        )}
+      </div>
+
       <div className="field">
-        <label>Domain Label</label>
+        <label>Dimension Label</label>
         <input placeholder="e.g. Software Delivery Leadership" value={value.label}
           onChange={e => update('label', e.target.value)} />
       </div>
       <div className="field">
         <label>Description</label>
-        <textarea placeholder="What is this domain? What does it cover in your career?"
+        <textarea placeholder="What is this dimension? What does it cover in your career?"
           value={value.description} onChange={e => update('description', e.target.value)} />
       </div>
       <div className="field">
@@ -67,7 +127,23 @@ export default function ProfileForm() {
     }
   }, [id])
 
-  const updateDomain = (key, val) => setProfile(p => ({ ...p, [key]: val }))
+  const updateDimension = (index, val) => {
+    const dimensions = [...profile.dimensions]
+    dimensions[index] = val
+    setProfile(p => ({ ...p, dimensions }))
+  }
+
+  const addDimension = () => {
+    if (profile.dimensions.length >= 6) return
+    setProfile(p => ({ ...p, dimensions: [...p.dimensions, { ...EMPTY_DOMAIN }] }))
+  }
+
+  const removeDimension = (index) => {
+    if (profile.dimensions.length <= 3) return
+    const dimensions = profile.dimensions.filter((_, i) => i !== index)
+    setProfile(p => ({ ...p, dimensions }))
+  }
+
   const updateHub = (field, val) => setProfile(p => ({ ...p, hub: { ...p.hub, [field]: val } }))
   const updateValue = (i, val) => {
     const v = [...profile.hub.values]
@@ -87,11 +163,22 @@ export default function ProfileForm() {
     navigate(`/analysis/${data.profile_id}`)
   }
 
+  const loadExample = () => setProfile({ ...EXAMPLE_PROFILE })
+
+  const atMax = profile.dimensions.length >= 6
+  const atMin = profile.dimensions.length <= 3
+
   return (
     <div>
-      <div className="h2">{isNew ? 'New Profile' : 'Edit Profile'}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+        <div className="h2">{isNew ? 'New Profile' : 'Edit Profile'}</div>
+        {isNew && (
+          <button className="btn btn-secondary" onClick={loadExample}>✦ Load Example</button>
+        )}
+      </div>
       <p className="muted small mt-1" style={{ marginBottom: '2rem' }}>
-        Fill in each of the three Mercedes Model domains and the hub.
+        Define between 3 and 6 career dimensions, then complete the hub.
+        {isNew && <span style={{ color: 'var(--accent)', marginLeft: '0.4rem' }}>Try the example profile to see how it works.</span>}
       </p>
 
       <div className="card">
@@ -111,9 +198,23 @@ export default function ProfileForm() {
         </div>
       </div>
 
-      <DomainSection letter="A" label="Point A" value={profile.domain_a} onChange={v => updateDomain('domain_a', v)} />
-      <DomainSection letter="B" label="Point B" value={profile.domain_b} onChange={v => updateDomain('domain_b', v)} />
-      <DomainSection letter="C" label="Point C" value={profile.domain_c} onChange={v => updateDomain('domain_c', v)} />
+      {profile.dimensions.map((dimension, i) => (
+        <DimensionSection
+          key={i}
+          index={i}
+          value={dimension}
+          onChange={val => updateDimension(i, val)}
+          onRemove={() => removeDimension(i)}
+          canRemove={!atMin}
+        />
+      ))}
+
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0 1.5rem' }}>
+        <button className="btn btn-secondary" onClick={addDimension} disabled={atMax}
+          style={{ opacity: atMax ? 0.4 : 1 }}>
+          + Add Dimension {atMax ? '(max 6)' : `(${profile.dimensions.length}/6)`}
+        </button>
+      </div>
 
       <div className="card" style={{ borderTop: '3px solid #a78bfa' }}>
         <div className="section-label" style={{ color: '#a78bfa' }}>The Hub — Personal Brand</div>

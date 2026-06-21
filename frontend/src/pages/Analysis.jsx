@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 
+const DIMENSION_COLOURS = ['#6c8eff', '#f0a04b', '#4caf7d', '#e05c5c', '#a78bfa', '#38bdf8']
+
 function ScoreRing({ score, label, colour }) {
   const pct = (score / 10) * 100
   const r = 28
@@ -18,6 +20,153 @@ function ScoreRing({ score, label, colour }) {
           fontFamily="var(--font-body)">{score}</text>
       </svg>
       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{label}</div>
+    </div>
+  )
+}
+
+function RadarDiagram({ analysis, profile }) {
+  const cx = 220
+  const cy = 230
+  const maxR = 130
+  const levels = 5
+
+  const dimensions = profile?.dimensions || []
+  const n = dimensions.length
+  if (n < 2) return null
+
+  const toRad = deg => (deg * Math.PI) / 180
+
+  // Evenly space axes, starting from top (-90 degrees)
+  const angles = dimensions.map((_, i) => -90 + (360 / n) * i)
+
+  const axisPoint = (angle, r) => ({
+    x: cx + r * Math.cos(toRad(angle)),
+    y: cy + r * Math.sin(toRad(angle))
+  })
+
+  // Grid polygon at level r
+  const gridPolygon = r =>
+    angles.map(a => axisPoint(a, r)).map(p => `${p.x},${p.y}`).join(' ')
+
+  // Data points
+  const scores = dimensions.map((_, i) => {
+    const key = `dimension_${i + 1}`
+    return analysis.dimension_scores?.[key] || 0
+  })
+
+  const dataPoints = scores
+    .map((score, i) => {
+      const pt = axisPoint(angles[i], (score / 10) * maxR)
+      return `${pt.x},${pt.y}`
+    })
+    .join(' ')
+
+  const hubScore = analysis.hub_strength || 0
+  const hubR = 10 + ((hubScore / 10) * 18)
+
+  const trunc = (s, n = 14) => s && s.length > n ? s.slice(0, n) + '…' : s
+
+  return (
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className="section-label" style={{ alignSelf: 'flex-start' }}>Career Compass Map</div>
+      <svg width="440" height="460" viewBox="0 0 440 460" style={{ maxWidth: '100%' }}>
+        <defs>
+          <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#6c8eff" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#4caf7d" stopOpacity="0.1" />
+          </radialGradient>
+          <filter id="softGlow">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Grid levels */}
+        {Array.from({ length: levels }).map((_, i) => {
+          const r = ((i + 1) / levels) * maxR
+          return (
+            <polygon key={i} points={gridPolygon(r)}
+              fill="none" stroke="#2e3350"
+              strokeWidth={i === levels - 1 ? 1.5 : 1}
+              strokeDasharray={i === levels - 1 ? 'none' : '3 4'}
+              opacity={0.6} />
+          )
+        })}
+
+        {/* Scale labels on first axis */}
+        {Array.from({ length: levels }).map((_, i) => {
+          const r = ((i + 1) / levels) * maxR
+          const pt = axisPoint(angles[0], r)
+          return (
+            <text key={i} x={pt.x + 5} y={pt.y + 4}
+              fill="#444c6e" fontSize="8" fontFamily="Inter, sans-serif">
+              {((i + 1) / levels * 10).toFixed(0)}
+            </text>
+          )
+        })}
+
+        {/* Axes */}
+        {angles.map((angle, i) => {
+          const tip = axisPoint(angle, maxR)
+          return (
+            <line key={i} x1={cx} y1={cy} x2={tip.x} y2={tip.y}
+              stroke={DIMENSION_COLOURS[i % DIMENSION_COLOURS.length]}
+              strokeWidth="1.5" opacity="0.4" />
+          )
+        })}
+
+        {/* Data polygon */}
+        <polygon points={dataPoints} fill="url(#radarFill)" opacity="0.85" />
+        <polygon points={dataPoints} fill="none"
+          stroke="#6c8eff" strokeWidth="2" strokeLinejoin="round"
+          filter="url(#softGlow)" opacity="0.9" />
+
+        {/* Data point dots + scores */}
+        {scores.map((score, i) => {
+          const pt = axisPoint(angles[i], (score / 10) * maxR)
+          const colour = DIMENSION_COLOURS[i % DIMENSION_COLOURS.length]
+          return (
+            <g key={i}>
+              <circle cx={pt.x} cy={pt.y} r="6" fill={colour} />
+              <text x={pt.x} y={pt.y + 4} textAnchor="middle"
+                fill="white" fontSize="7" fontWeight="700">{score}</text>
+            </g>
+          )
+        })}
+
+        {/* Hub */}
+        <circle cx={cx} cy={cy} r={hubR + 10} fill="#a78bfa" opacity="0.08" />
+        <circle cx={cx} cy={cy} r={hubR} fill="#1a1d27" stroke="#a78bfa" strokeWidth="2" />
+        <text x={cx} y={cy - 3} textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="700">{hubScore}</text>
+        <text x={cx} y={cy + 9} textAnchor="middle" fill="#a78bfa" fontSize="7" opacity="0.8">HUB</text>
+
+        {/* Dimension labels */}
+        {dimensions.map((dim, i) => {
+          const colour = DIMENSION_COLOURS[i % DIMENSION_COLOURS.length]
+          const labelPt = axisPoint(angles[i], maxR + 28)
+          const subPt = axisPoint(angles[i], maxR + 40)
+          return (
+            <g key={i}>
+              <text x={labelPt.x} y={labelPt.y}
+                textAnchor="middle" fill={colour} fontSize="10" fontWeight="600">
+                {trunc(dim.label || `Dimension ${i + 1}`)}
+              </text>
+              <text x={subPt.x} y={subPt.y}
+                textAnchor="middle" fill="#8891b4" fontSize="8">
+                Dimension {i + 1}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Coherence footer */}
+        <text x={cx} y={425} textAnchor="middle" fill="#6c8eff" fontSize="10" fontWeight="600">
+          Overall Coherence {analysis.coherence_score}/10
+        </text>
+      </svg>
+      <p className="small muted" style={{ marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+        A balanced shape indicates strong coherence across dimensions. A lopsided shape signals a coaching opportunity.
+      </p>
     </div>
   )
 }
@@ -74,6 +223,7 @@ export default function Analysis() {
   if (!profile) return <p className="muted">Loading profile…</p>
 
   const a = analysis
+  const dimensions = profile?.dimensions || []
 
   return (
     <div>
@@ -95,7 +245,7 @@ export default function Analysis() {
       {!a && !loading && (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
-          <p className="muted">Click <strong>Run Analysis</strong> to generate the Mercedes Model assessment.</p>
+          <p className="muted">Click <strong>Run Analysis</strong> to generate the Career Compass Map assessment.</p>
         </div>
       )}
 
@@ -113,11 +263,19 @@ export default function Analysis() {
             <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
               <ScoreRing score={a.coherence_score} label="Coherence" colour="#6c8eff" />
               <ScoreRing score={a.hub_strength} label="Hub Strength" colour="#a78bfa" />
-              <ScoreRing score={a.domain_scores?.domain_a} label={profile.domain_a?.label || 'Domain A'} colour="#6c8eff" />
-              <ScoreRing score={a.domain_scores?.domain_b} label={profile.domain_b?.label || 'Domain B'} colour="#f0a04b" />
-              <ScoreRing score={a.domain_scores?.domain_c} label={profile.domain_c?.label || 'Domain C'} colour="#4caf7d" />
+              {dimensions.map((dim, i) => (
+                <ScoreRing
+                  key={i}
+                  score={a.dimension_scores?.[`dimension_${i + 1}`]}
+                  label={dim.label || `Dimension ${i + 1}`}
+                  colour={DIMENSION_COLOURS[i % DIMENSION_COLOURS.length]}
+                />
+              ))}
             </div>
           </div>
+
+          {/* Radar Diagram */}
+          <RadarDiagram analysis={a} profile={profile} />
 
           {/* Narrative thread */}
           {a.narrative_thread && (
