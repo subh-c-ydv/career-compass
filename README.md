@@ -11,6 +11,8 @@ Career Compass helps a coach (or individual) structure a career across multiple 
 - Key tensions, gaps, and opportunities
 - Reflection questions for coaching conversations
 - A narrative thread the client can own
+- A radar chart visualising career shape across all dimensions
+- A PDF export of the full analysis
 
 ## Who it's for
 
@@ -25,6 +27,7 @@ Career Compass helps a coach (or individual) structure a career across multiple 
 | Frontend | React + Vite |
 | Backend | Python + Flask |
 | AI | Anthropic Claude API |
+| PDF Export | ReportLab |
 | Profiles | JSON (local, per-profile files) |
 
 ## Project Structure
@@ -33,45 +36,75 @@ Career Compass helps a coach (or individual) structure a career across multiple 
 career-compass/
 ├── frontend/          # React app (Vite)
 │   ├── src/
-│   │   ├── components/   # Reusable UI components
-│   │   ├── pages/        # Route-level pages
-│   │   └── hooks/        # Custom React hooks
+│   │   ├── components/
+│   │   ├── pages/        # Home, ProfileForm, Analysis
+│   │   └── hooks/
 │   ├── index.html
 │   └── package.json
 ├── backend/           # Flask API
 │   ├── app.py            # API routes
 │   ├── coach.py          # Career Compass Map logic + Claude calls
+│   ├── export.py         # PDF generation via ReportLab
 │   ├── config.py         # Config and env vars
-│   └── prompts/          # Prompt templates
+│   └── prompts/
 │       └── analysis_prompt.txt
-├── profiles/          # Stored coach/client profiles (JSON)
-├── docs/              # Design notes, framework reference
+├── profiles/          # Stored coach/client profiles (JSON, not committed)
+├── docs/
+│   └── career-compass-map.md
+├── start.sh           # Start both servers + open browser
+├── stop.sh            # Stop both servers
 ├── requirements.txt
 └── README.md
 ```
 
 ## Getting Started
 
-### Backend
+### First time setup
 
+**1. Install Python dependencies**
 ```bash
 cd backend
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r ../requirements.txt
-export ANTHROPIC_API_KEY=your_key_here
-python3 app.py
 ```
 
-### Frontend
+**2. Add your Anthropic API key**
 
+Create `backend/.env` and add:
+```
+ANTHROPIC_API_KEY=your_key_here
+```
+
+**3. Install frontend dependencies**
 ```bash
 cd frontend
 npm install
-npm run dev
 ```
 
-The app runs at `http://localhost:5173` with the API at `http://localhost:5001`.
+### Running the app
+
+From the project root:
+```bash
+./start.sh
+```
+
+This starts both servers in the background and opens `http://localhost:5173` in your browser automatically.
+
+To stop:
+```bash
+./stop.sh
+```
+
+### Optional: shell aliases
+
+Add to `~/.zshrc` for one-word launch from anywhere:
+```bash
+alias compass='~/Documents/career-compass/start.sh'
+alias compassstop='~/Documents/career-compass/stop.sh'
+```
+
+Then just type `compass` to start and `compassstop` to stop.
 
 ## The Career Compass Map
 
@@ -79,10 +112,11 @@ The framework maps a career across 3 to 6 independently defined dimensions — e
 
 | Element | Description |
 |---|---|
-| Dimensions | 3–6 career dimensions, each independently scored |
+| Dimensions | 3–6 career dimensions, each independently scored 1–10 |
 | Hub | The personal brand — the narrative thread across all dimensions |
 | Coherence Score | How well the dimensions connect and reinforce each other |
 | Radar Chart | Visual shape of the career — balanced = coherent, lopsided = opportunity |
+| PDF Export | Full analysis report for sharing with clients |
 
 The radar chart is the key diagnostic tool: a balanced polygon means strong coherence across all dimensions. A lopsided shape immediately flags where coaching energy is needed.
 
