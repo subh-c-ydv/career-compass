@@ -64,12 +64,11 @@ function RadarDiagram({ analysis, profile }) {
   const hubScore = analysis.hub_strength || 0
   const hubR = 10 + ((hubScore / 10) * 18)
 
-  const trunc = (s, n = 14) => s && s.length > n ? s.slice(0, n) + '…' : s
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div className="section-label" style={{ alignSelf: 'flex-start' }}>Career Compass Map</div>
-      <svg width="440" height="460" viewBox="0 0 440 460" style={{ maxWidth: '100%' }}>
+      <svg width="500" height="500" viewBox="0 0 500 500" style={{ maxWidth: '100%' }}>
         <defs>
           <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#6c8eff" stopOpacity="0.35" />
@@ -140,27 +139,31 @@ function RadarDiagram({ analysis, profile }) {
         <text x={cx} y={cy - 3} textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="700">{hubScore}</text>
         <text x={cx} y={cy + 9} textAnchor="middle" fill="#a78bfa" fontSize="7" opacity="0.8">HUB</text>
 
-        {/* Dimension labels */}
+        {/* Dimension labels — name only, word-wrapped */}
         {dimensions.map((dim, i) => {
           const colour = DIMENSION_COLOURS[i % DIMENSION_COLOURS.length]
-          const labelPt = axisPoint(angles[i], maxR + 28)
-          const subPt = axisPoint(angles[i], maxR + 40)
+          const labelPt = axisPoint(angles[i], maxR + 32)
+          const words = (dim.label || `Dimension ${i + 1}`).split(' ')
+          const line1 = words.slice(0, Math.ceil(words.length / 2)).join(' ')
+          const line2 = words.slice(Math.ceil(words.length / 2)).join(' ')
           return (
             <g key={i}>
-              <text x={labelPt.x} y={labelPt.y}
+              <text x={labelPt.x} y={labelPt.y - (line2 ? 6 : 0)}
                 textAnchor="middle" fill={colour} fontSize="10" fontWeight="600">
-                {trunc(dim.label || `Dimension ${i + 1}`)}
+                {line1}
               </text>
-              <text x={subPt.x} y={subPt.y}
-                textAnchor="middle" fill="#8891b4" fontSize="8">
-                Dimension {i + 1}
-              </text>
+              {line2 && (
+                <text x={labelPt.x} y={labelPt.y + 8}
+                  textAnchor="middle" fill={colour} fontSize="10" fontWeight="600">
+                  {line2}
+                </text>
+              )}
             </g>
           )
         })}
 
         {/* Coherence footer */}
-        <text x={cx} y={425} textAnchor="middle" fill="#6c8eff" fontSize="10" fontWeight="600">
+        <text x={cx} y={480} textAnchor="middle" fill="#6c8eff" fontSize="10" fontWeight="600">
           Overall Coherence {analysis.coherence_score}/10
         </text>
       </svg>
@@ -190,11 +193,13 @@ function ListSection({ title, items, colour }) {
   )
 }
 
+
 export default function Analysis() {
   const { id } = useParams()
   const [profile, setProfile] = useState(null)
   const [analysis, setAnalysis] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -220,6 +225,28 @@ export default function Analysis() {
     setLoading(false)
   }
 
+  const handleExport = async () => {
+    if (!analysis) return
+    setExporting(true)
+    try {
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile, analysis })
+      })
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `career-compass-${profile.name.replace(/\s+/g, '_')}.pdf`
+      anchor.click()
+      window.URL.revokeObjectURL(url)
+    } catch (e) {
+      setError('Export failed. Check the backend is running.')
+    }
+    setExporting(false)
+  }
+
   if (!profile) return <p className="muted">Loading profile…</p>
 
   const a = analysis
@@ -234,6 +261,11 @@ export default function Analysis() {
         </div>
         <div className="flex gap-1">
           <Link to={`/profile/${id}`} className="btn btn-secondary">Edit</Link>
+          {a && !a.parse_error && (
+            <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>
+              {exporting ? 'Exporting…' : '↓ Export PDF'}
+            </button>
+          )}
           <button className="btn btn-warm" onClick={runAnalysis} disabled={loading}>
             {loading ? 'Analysing…' : '✦ Run Analysis'}
           </button>
