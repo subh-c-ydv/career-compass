@@ -123,3 +123,7 @@ The radar chart is the key diagnostic tool: a balanced polygon means strong cohe
 ---
 
 *Built by subh-c-ydv*
+
+## Licence
+
+This project is released under the [MIT Licence](LICENSE).
